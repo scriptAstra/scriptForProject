@@ -68,7 +68,7 @@ list_system_bins() {
 module_integrity_run() {
     req_run "2.3.1(а)" "/etc/passwd: 644" "perm_check 133 list_passwd" "perm_apply 133 list_passwd"
     req_run "2.3.1(б)" "/etc/group: 644" "perm_check 133 list_group" "perm_apply 133 list_group"
-    req_run "2.3.1(в)" "/etc/shadow: go-rwx" "perm_check 077 list_shadow" "perm_apply 077 list_shadow"
+    req_run "2.3.1(в)" "/etc/shadow: go-rwx" "perm_check 027 list_shadow" "perm_apply 027 list_shadow"
     req_run "2.3.2" "Исполняемые файлы запущенных процессов, библиотеки и их каталоги: go-w" \
         "perm_check 022 list_running_all" "perm_apply 022 list_running_all"
     req_run "2.3.3" "Файлы, вызываемые из заданий cron: go-w" \
