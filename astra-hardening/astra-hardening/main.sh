@@ -2,7 +2,8 @@
 set -o pipefail
 
 BASE_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-RUN_ID=$(date +%Y%m%d_%H%M%S)
+RUN_ID="$(date +%Y%m%d_%H%M%S)_$$"
+umask 077
 MODE=check
 FORCE_OS=0
 VERBOSE=0
@@ -12,7 +13,7 @@ LOG_DIR=${LOG_DIR:-/var/log/astra-hardening}
 BACKUP_ROOT=${BACKUP_ROOT:-/var/backups/astra-hardening}
 CURRENT_MODULE=main
 
-for lib in logger common config results checker report; do
+for lib in logger common config results checker probe report; do
     # shellcheck source=/dev/null
     source "$BASE_DIR/lib/$lib.sh" || { echo "не удалось загрузить lib/$lib.sh" >&2; exit 2; }
 done
@@ -80,13 +81,25 @@ main() {
     results_init || exit 2
 
     modules=${SELECTED_MODULES:-$MODULES}
-    for m in ${modules//,/ }; do
-        run_module "$m"
-    done
-
-    report_generate
+    local requested=$MODE final=$RESULTS_FILE phase
+    if [[ $requested == apply ]]; then
+        for phase in before apply; do
+            RESULTS_FILE="$LOG_DIR/${phase}_$RUN_ID.tsv"
+            : >"$RESULTS_FILE" || exit 2
+            MODE=check
+            [[ $phase == apply ]] && MODE=apply
+            for m in ${modules//,/ }; do run_module "$m"; done
+        done
+    fi
+    MODE=check
+    RESULTS_FILE=$final
+    RESULT_COUNT=()
+    for m in ${modules//,/ }; do run_module "$m"; done
+    MODE=$requested
+    report_generate || exit 2
+    if [[ $MODE == apply ]]; then comparison_generate || exit 2; fi
     results_summary
-    results_ok
+    results_ok && { [[ $MODE != apply ]] || ! grep -q $'\tERROR\t' "$LOG_DIR/apply_$RUN_ID.tsv"; }
 }
 
 main "$@"

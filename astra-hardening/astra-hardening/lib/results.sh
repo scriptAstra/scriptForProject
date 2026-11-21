@@ -7,7 +7,14 @@ results_init() {
 
 result_add() {
     local id=$1 status=$2 desc=$3
-    printf '%s\t%s\t%s\t%s\n' "$CURRENT_MODULE" "$id" "$status" "$desc" >>"$RESULTS_FILE"
+    local field
+    local -a fields=("$CURRENT_MODULE" "$id" "$status" "$desc" "${4:-$desc}" "${5:-—}" "${6:-—}" "${7:-Сверьте объект с указанным требованием и повторите проверку.}")
+    for field in "${!fields[@]}"; do
+        fields[field]=${fields[field]//$'\t'/ }
+        fields[field]=${fields[field]//$'\n'/; }
+        fields[field]=${fields[field]//$'\r'/ }
+    done
+    (IFS=$'\t'; printf '%s\n' "${fields[*]}") >>"$RESULTS_FILE" || exit 2
     RESULT_COUNT[$status]=$(( ${RESULT_COUNT[$status]:-0} + 1 ))
 }
 

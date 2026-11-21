@@ -56,6 +56,7 @@ kernel_finalize() {
         log_warn "конфигурация GRUB обновлена, требуется перезагрузка"
     else
         log_error "update-grub завершился с ошибкой"
+        result_add GRUB ERROR "update-grub завершился с ошибкой"
         return 1
     fi
 }
@@ -70,7 +71,8 @@ module_kernel_run() {
             continue
         fi
         req_run "$id" "sysctl $key $val" \
-            "kernel_sysctl_check $key $val" "kernel_sysctl_apply $key $val"
+            "kernel_sysctl_check $key $val" "kernel_sysctl_apply $key $val" \
+            "$key" "$val" "sysctl -n $key" "Сверьте активное значение sysctl и переопределения в конфигурации sysctl: $key (эталон: $val)."
     done
 
     for line in "${BOOT_REQS[@]}"; do
